@@ -3,7 +3,7 @@ from sqlmodel import Session, select
 
 from exceptions import PrescriberNotFound
 from database import get_db
-from models import Prescriber
+from models import Prescriber, Prescription
 from schemas import PrescriberCreateRequest, PrescriberCreateResponse, PrescriberUpdateRequest
 
 router = APIRouter()
@@ -55,5 +55,9 @@ async def delete_prescriber(prescriber_id: int, session: Session = Depends(get_d
     prescriber: Prescriber | None = session.get(Prescriber, prescriber_id)
     if prescriber is None:
         raise PrescriberNotFound(id=prescriber_id)
+
+    prescriptions: list[Prescription] = session.exec(select(Prescription).where(Prescription.prescriber_id == prescriber_id)).all()
+    for prescription in prescriptions:
+        session.delete(prescription)
     session.delete(prescriber)
     session.commit()
